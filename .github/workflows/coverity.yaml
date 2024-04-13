@@ -1,47 +1,30 @@
-#
-# Licensed under the GPL License. You may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#   https://www.gnu.org/licenses/old-licenses/gpl-2.0.html
-#
-# THIS PACKAGE IS PROVIDED "AS IS" AND WITHOUT ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING,
-# WITHOUT LIMITATION, THE IMPLIED WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR
-# PURPOSE.
-#
-
-name: Coverity
-
-on:
-  push:
-    branches:
-      - coverity_scan
-
 jobs:
   build:
     if: github.repository_owner == 'psi-probe'
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up JDK
-        uses: actions/setup-java@v4
-        with:
-          java-version: 21
-          distribution: zulu
-      - name: Analyze with Coverity
-        run: |
-          wget -q https://scan.coverity.com/download/linux64 --post-data "token=$COVERITY_TOKEN&project=psi-probe%2Fpsi-probe" -O coverity_tool.tgz
-          tar -xf coverity_tool.tgz
-          ./cov-analysis-linux64-*/bin/cov-configure --java
-          ./cov-analysis-linux64-*/bin/cov-build --dir cov-int ./mvnw -B -V -DskipTests=true verify -Dlicense.skip=true --no-transfer-progress
-          cat /home/runner/work/psi-probe/psi-probe/cov-int/build-log.txt
-          tar czvf psi-probe.tgz cov-int
-          curl \
-            --form token=$COVERITY_TOKEN \
-            --form email=$EMAIL \
-            --form file=@psi-probe.tgz \
-            --form version="psi-probe/coverity_scan" \
-            --form description="psi-probe Coverity Scan" \
-            https://scan.coverity.com/builds?project=psi-probe%2Fpsi-probe
-        env:
-          COVERITY_TOKEN: ${{ secrets.COVERITY_TOKEN }}
-          EMAIL: ${{ secrets.EMAIL }}
+    - continue-on-error: true
+      uses: actions/checkout@v4
+    - continue-on-error: true
+      name: Set up JDK
+      uses: actions/setup-java@v4
+      with:
+        distribution: zulu
+        java-version: 21
+    - continue-on-error: true
+      env:
+        COVERITY_TOKEN: ${{ secrets.COVERITY_TOKEN }}
+        EMAIL: ${{ secrets.EMAIL }}
+      name: Analyze with Coverity
+      run: "wget -q https://scan.coverity.com/download/linux64 --post-data \"token=$COVERITY_TOKEN&project=psi-probe%2Fpsi-probe\"\
+        \ -O coverity_tool.tgz\ntar -xf coverity_tool.tgz\n./cov-analysis-linux64-*/bin/cov-configure\
+        \ --java\n./cov-analysis-linux64-*/bin/cov-build --dir cov-int ./mvnw -B -V\
+        \ -DskipTests=true verify -Dlicense.skip=true --no-transfer-progress\ncat\
+        \ /home/runner/work/psi-probe/psi-probe/cov-int/build-log.txt\ntar czvf psi-probe.tgz\
+        \ cov-int\ncurl \\\n  --form token=$COVERITY_TOKEN \\\n  --form email=$EMAIL\
+        \ \\\n  --form file=@psi-probe.tgz \\\n  --form version=\"psi-probe/coverity_scan\"\
+        \ \\\n  --form description=\"psi-probe Coverity Scan\" \\\n  https://scan.coverity.com/builds?project=psi-probe%2Fpsi-probe\n"
+name: Coverity
+on:
+  repository_dispatch:
+    types: trigger-ga___coverity.yaml

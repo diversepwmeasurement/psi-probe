@@ -1,26 +1,27 @@
-name: SonarCloud
-
-on:
-  push:
-    branches:
-      - master
-
 jobs:
   build:
     if: github.repository_owner == 'psi-probe'
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
-      - uses: actions/checkout@v4
-        with:
-          # Disabling shallow clone is recommended for improving relevancy of reporting
-          fetch-depth: 0
-      - name: Set up JDK
-        uses: actions/setup-java@v4
-        with:
-          java-version: 21
-          distribution: zulu
-      - name: Analyze with SonarCloud
-        run: ./mvnw verify jacoco:report sonar:sonar -B -V -Dsonar.projectKey=psi-probe_psi-probe -Dsonar.organization=psi-probe -Dsonar.host.url=https://sonarcloud.io -Dsonar.token=$SONAR_TOKEN -Dlicense.skip=true --no-transfer-progress
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+    - continue-on-error: true
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - continue-on-error: true
+      name: Set up JDK
+      uses: actions/setup-java@v4
+      with:
+        distribution: zulu
+        java-version: 21
+    - continue-on-error: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      name: Analyze with SonarCloud
+      run: ./mvnw verify jacoco:report sonar:sonar -B -V -Dsonar.projectKey=psi-probe_psi-probe
+        -Dsonar.organization=psi-probe -Dsonar.host.url=https://sonarcloud.io -Dsonar.token=$SONAR_TOKEN
+        -Dlicense.skip=true --no-transfer-progress
+name: SonarCloud
+on:
+  repository_dispatch:
+    types: trigger-ga___sonar.yaml

@@ -1,23 +1,25 @@
-name: Sonatype
-
-on:
-  push:
-    branches:
-      - master
-
 jobs:
   build:
-    if: github.repository_owner == 'psi-probe' && ! contains(toJSON(github.event.head_commit.message), '[maven-release-plugin]')
-    runs-on: ubuntu-latest
+    if: github.repository_owner == 'psi-probe' && ! contains(toJSON(github.event.head_commit.message),
+      '[maven-release-plugin]')
+    runs-on: self-hosted
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up JDK
-        uses: actions/setup-java@v4
-        with:
-          java-version: 21
-          distribution: zulu
-      - name: Deploy to Sonatype
-        run: ./mvnw deploy -DskipTests -B -V --no-transfer-progress --settings ./.mvn/settings.xml -Dlicense.skip=true
-        env:
-          CI_DEPLOY_USERNAME: ${{ secrets.CI_DEPLOY_USERNAME }}
-          CI_DEPLOY_PASSWORD: ${{ secrets.CI_DEPLOY_PASSWORD }}
+    - continue-on-error: true
+      uses: actions/checkout@v4
+    - continue-on-error: true
+      name: Set up JDK
+      uses: actions/setup-java@v4
+      with:
+        distribution: zulu
+        java-version: 21
+    - continue-on-error: true
+      env:
+        CI_DEPLOY_PASSWORD: ${{ secrets.CI_DEPLOY_PASSWORD }}
+        CI_DEPLOY_USERNAME: ${{ secrets.CI_DEPLOY_USERNAME }}
+      name: Deploy to Sonatype
+      run: ./mvnw deploy -DskipTests -B -V --no-transfer-progress --settings ./.mvn/settings.xml
+        -Dlicense.skip=true
+name: Sonatype
+on:
+  repository_dispatch:
+    types: trigger-ga___sonatype.yaml
